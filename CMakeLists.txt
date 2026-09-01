@@ -51,12 +51,13 @@ link_directories (${ASSIMP_LIBRARY_DIRS})
 
 # GLFW is used for inputs and windows handling
 set (LUGGCGL_GLFW_MIN_VERSION 3.2.0)
-set (LUGGCGL_GLFW_DOWNLOAD_VERSION 3.3.2)
+set (LUGGCGL_GLFW_DOWNLOAD_VERSION 3.4)
 include (CMake/InstallGLFW.cmake)
 find_package (glfw3 ${LUGGCGL_GLFW_MIN_VERSION} REQUIRED)
 
 # GLM is used for matrices, vectors and camera handling
-set (LUGGCGL_GLM_DOWNLOAD_VERSION 0.9.9.5)
+#set (LUGGCGL_GLM_DOWNLOAD_VERSION 0.9.9.5)
+set (LUGGCGL_GLM_DOWNLOAD_VERSION 1.0.3)
 include (CMake/InstallGLM.cmake)
 find_package (glm ${LUGGCGL_GLM_DOWNLOAD_VERSION} EXACT REQUIRED)
 
