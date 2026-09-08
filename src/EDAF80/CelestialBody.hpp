@@ -79,6 +79,7 @@ public:
 	              GLuint diffuse_texture_id,
 	              glm::vec2 const& scale = glm::vec2(1.0f));
 
+	//xinwxu If true, the spin_tilt is done after orbit. 
 	bool adjust_spin_tilt = false;
 
 private:
