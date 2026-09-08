@@ -31,7 +31,8 @@ int main()
 	FPSCameraf camera(0.5f * glm::half_pi<float>(),
 	                  static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
 	                  0.01f, 1000.0f);
-	camera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
+	//camera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
+	camera.mWorld.SetTranslate(glm::vec3(0.0f, 4.0f, 20.0f));
 	camera.mWorld.LookAt(glm::vec3(0.0f));
 	camera.mMouseSensitivity = glm::vec2(0.003f);
 	camera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
@@ -129,6 +130,7 @@ int main()
 	SpinConfiguration const saturn_spin{ glm::radians(-27.0f), glm::two_pi<float>() / 1.2f };
 	OrbitConfiguration const saturn_orbit{ 16.0f, glm::radians(-5.5f), glm::two_pi<float>() / 400.0f };
 	glm::vec2 const saturn_ring_scale{ 1.0f, 1.25f };
+	//glm::vec2 const saturn_ring_scale{ 2.0f, 2.5f };
 
 	glm::vec3 const uranus_scale{ 0.2f };
 	SpinConfiguration const uranus_spin{ glm::radians(-82.0f), -glm::two_pi<float>() / 2.0f };
@@ -158,18 +160,44 @@ int main()
 	//
 	// Set up the celestial bodies.
 	//
+	CelestialBody sun(sphere, &celestial_body_shader, sun_texture);
+	sun.set_scale(sun_scale);
+	sun.set_spin(sun_spin);
+
 	CelestialBody moon(sphere, &celestial_body_shader, moon_texture);
-	moon.set_scale(glm::vec3(0.3f));
+	moon.set_scale(moon_scale);
 	moon.set_spin(moon_spin);
-	moon.set_orbit({1.5f, glm::radians(-66.0f), glm::two_pi<float>() / 1.3f});
+	//moon.set_orbit({1.5f, glm::radians(-66.0f), glm::two_pi<float>() / 1.3f});
+	moon.set_orbit(moon_orbit);
 
 	CelestialBody earth(sphere, &celestial_body_shader, earth_texture);
+	sun.add_child(&earth);
+	earth.set_scale(earth_scale);
 	earth.set_spin(earth_spin);
-	earth.set_orbit({-2.5f, glm::radians(45.0f), glm::two_pi<float>() / 10.0f});
+	//earth.set_orbit({-2.5f, glm::radians(45.0f), glm::two_pi<float>() / 10.0f});
+	earth.set_orbit(earth_orbit);
+	earth.adjust_spin_tilt = true;
 	earth.add_child(&moon);
 
+	// Declare a body using its matching texture, scale, spin and orbit constants.
+#define ADD_CEL_BODY(name) \
+	CelestialBody name(sphere, &celestial_body_shader, name##_texture); \
+	name.set_scale(name##_scale); \
+	name.set_spin(name##_spin); \
+	name.set_orbit(name##_orbit); \
+	sun.add_child(&name);
 
-	//
+	//ADD_CEL_BODY(mercury);
+	//ADD_CEL_BODY(venus);
+	//ADD_CEL_BODY(mars);
+	//ADD_CEL_BODY(jupiter);
+	ADD_CEL_BODY(saturn);
+	//ADD_CEL_BODY(uranus);
+	//ADD_CEL_BODY(neptune);
+
+#undef DECLARE_BODY
+	saturn.set_ring(saturn_ring_shape, &celestial_ring_shader, saturn_ring_texture, saturn_ring_scale);
+
 	// Define the colour and depth used for clearing.
 	//
 	glClearDepthf(1.0f);
@@ -240,17 +268,35 @@ int main()
 
 		//
 		// Traverse the scene graph and render all nodes
-		//
 		struct CelestialBodyRef
 		{
 			CelestialBody* body;
 			glm::mat4 parent_transform;
 		};
+
+		//std::vector<CelestialBodyRef> scene_graph;
+
+		auto create_scene = [&](auto &&self, const CelestialBodyRef& bodyRef ) -> void{
+			//std::cout << "rendering "
+			glm::mat4 _parent_transform = bodyRef.body->render(animation_delta_time_us, camera.GetWorldToClipMatrix(), bodyRef.parent_transform, show_basis);
+			if (!bodyRef.body->get_children().empty())
+			{
+				for (auto child: bodyRef.body->get_children())
+				{
+					self(self, {child, _parent_transform});
+				}
+			}
+		};
+
+		create_scene(create_scene, {&sun, glm::mat4(1.0f)});
+
+		//
 		// TODO: Replace this explicit rendering of the Earth and Moon
 		// with a traversal of the scene graph and rendering of all its
 		// nodes.
-		earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)), show_basis);
-		//moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis);
+		//xinwxu ex1 earth.set_scale(glm::vec3(1.0f,0.2f,0.2f));
+		//auto earth_transform = earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)), show_basis);
+		//moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), earth_transform, show_basis);
 
 
 		//

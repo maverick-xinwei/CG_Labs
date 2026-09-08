@@ -26,9 +26,29 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	// milliseconds, the following would have been used:
 	// auto const elapsed_time_ms = std::chrono::duration<float, std::milli>(elapsed_time).count();
 
-	_body.spin.rotation_angle = -glm::half_pi<float>() / 2.0f;
+	//xinwxu: comment out this line because the spin has been defined in the set_spin function. 
+	//_body.spin.rotation_angle = -glm::half_pi<float>() / 2.0f;
+	_body.spin.rotation_angle =_body.spin.rotation_angle + _body.spin.speed * elapsed_time_s;
+	_body.orbit.rotation_angle = _body.orbit.rotation_angle + _body.orbit.speed * elapsed_time_s;
 
-	glm::mat4 world = parent_transform;
+	//glm::mat4 world = parent_transform;
+	//xinwxu
+	glm::mat4 R_spin(1.0f);
+	glm::mat4 R_spin_tilt(1.0f);
+	glm::mat4 T_orbit(1.0f);
+	glm::mat4 R_orbit(1.0f);
+	glm::mat4 R_orbit_tilt(1.0f);
+	//R_spin= glm::rotate(glm::mat4(1.0f), _body.spin.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	R_spin= glm::rotate(glm::mat4(1.0f), _body.spin.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	R_spin_tilt = glm::rotate(glm::mat4(1.0f), _body.spin.axial_tilt, glm::vec3(0.0f, 0.0f, 1.0f));
+	T_orbit = glm::translate(glm::mat4(1.0f), glm::vec3(_body.orbit.radius, 0.0f, 0.0f));
+	R_orbit = glm::rotate(glm::mat4(1.0f), _body.orbit.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f)); 
+	R_orbit_tilt = glm::rotate(glm::mat4(1.0f), _body.orbit.inclination, glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 world = parent_transform * R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt * R_spin * glm::scale(glm::mat4(1.0f), _body.scale);
+	if (adjust_spin_tilt)
+	{
+		world = parent_transform * R_spin_tilt* R_orbit_tilt*R_orbit* T_orbit* R_spin * glm::scale(glm::mat4(1.0f), _body.scale);
+	}
 
 	if (show_basis)
 	{
@@ -43,7 +63,16 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	// world matrix.
 	_body.node.render(view_projection, world);
 
-	return parent_transform;
+	glm::mat4 updated_parent_transform = parent_transform * R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt ; 
+
+	if (_ring.is_set)
+	{
+		glm::mat4 ring_world= R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt * R_spin * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0), glm::vec3(_ring.scale, 1.0f));
+		// inherit the scale : glm::mat4 ring_world= world* glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0), glm::vec3(_ring.scale, 1.0f));
+		_ring.node.render(view_projection, ring_world);
+	}
+
+	return updated_parent_transform;
 }
 
 void CelestialBody::add_child(CelestialBody* child)

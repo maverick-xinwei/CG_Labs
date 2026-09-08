@@ -79,6 +79,8 @@ public:
 	              GLuint diffuse_texture_id,
 	              glm::vec2 const& scale = glm::vec2(1.0f));
 
+	bool adjust_spin_tilt = false;
+
 private:
 	struct {
 		Node node;
