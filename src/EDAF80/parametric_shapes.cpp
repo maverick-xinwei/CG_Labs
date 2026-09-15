@@ -203,10 +203,6 @@ parametric_shapes::createSphere(float const radius,
 	data.indices_nb = indices.size()*3;
 	//std::cout << "Vertices count is " << data.vertices_nb << std::endl;
 	//std::cout << "indices count is " << data.indices_nb << std::endl;
-	for(auto idx : indices)
-	{
-		std::cout << idx << std::endl;
-	}
 
 	glGenVertexArrays(1, &data.vao);
 	glBindVertexArray(data.vao);

@@ -45,17 +45,19 @@ edaf80::Assignment2::run()
 	// Load the sphere geometry
 	//auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
 	//auto const shape = parametric_shapes::createQuad(0.25f, 0.15f);
-	auto const shape = parametric_shapes::createSphere(1.0, 10, 10);
+	auto const shape = parametric_shapes::createSphere(0.1, 10, 10);
 	if (shape.vao == 0u)
 	{
 		return;
 	}
 
 	// Set up the camera
-	//mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f));
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f));
 	//mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.5f));
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, -0.5f, 0.0f));
-	mCamera.mWorld.SetRotateX(glm::half_pi<float>());
+
+	//mCamera.mWorld.SetTranslate(glm::vec3(0.0f, -0.5f, 0.0f));
+	//mCamera.mWorld.SetRotateX(glm::half_pi<float>());
+
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
 
@@ -181,6 +183,9 @@ edaf80::Assignment2::run()
 
 	changeCullMode(cull_mode);
 
+
+	uint8_t curr_point_idx = 0;
+
 	while (!glfwWindowShouldClose(window)) {
 		auto const nowTime = std::chrono::high_resolution_clock::now();
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
@@ -223,24 +228,48 @@ edaf80::Assignment2::run()
 		if (interpolate) {
 			//! \todo Interpolate the movement of a shape between various
 			//!        control points.
+			circle_rings.set_program(&normal_shader, set_uniforms);
+
+			glm::vec3 p_1 = control_point_locations[(curr_point_idx+control_point_locations.size()-1)%control_point_locations.size()];
+			glm::vec3 p0 = control_point_locations[curr_point_idx];
+			glm::vec3 p1 = control_point_locations[(curr_point_idx+1)%control_point_locations.size()];
+			glm::vec3 p2 = control_point_locations[(curr_point_idx+2)%control_point_locations.size()];
+
+			if (elapsed_time_s > 1)
+			{
+				elapsed_time_s = 1;
+			}
+
 			if (use_linear) {
 				//! \todo Compute the interpolated position
 				//!       using the linear interpolation.
+				auto pos_now = interpolation::evalLERP(p0, p1, elapsed_time_s);
+				circle_rings.get_transform().SetTranslate(pos_now);
 			}
 			else {
 				//! \todo Compute the interpolated position
 				//!       using the Catmull-Rom interpolation;
 				//!       use the `catmull_rom_tension`
 				//!       variable as your tension argument.
+				auto pos_now = interpolation::evalCatmullRom(p_1, p0, p1, p2, catmull_rom_tension, elapsed_time_s);
+				circle_rings.get_transform().SetTranslate(pos_now);
+			}
+
+
+			if (elapsed_time_s >= 1)
+			{
+				elapsed_time_s = 0;
+				curr_point_idx = (curr_point_idx +1)%control_point_locations.size();
 			}
 		}
 
 		circle_rings.render(mCamera.GetWorldToClipMatrix());
-		// if (show_control_points) {
-		// 	for (auto const& control_point : control_points) {
-		// 		control_point.render(mCamera.GetWorldToClipMatrix());
-		// 	}
-		// }
+
+		if (show_control_points) {
+			for (auto const& control_point : control_points) {
+				control_point.render(mCamera.GetWorldToClipMatrix());
+		 	}
+		}
 
 		bool const opened = ImGui::Begin("Scene Controls", nullptr, ImGuiWindowFlags_None);
 		if (opened) {
