@@ -187,13 +187,13 @@ int main()
 	name.set_orbit(name##_orbit); \
 	sun.add_child(&name);
 
-	//ADD_CEL_BODY(mercury);
-	//ADD_CEL_BODY(venus);
-	//ADD_CEL_BODY(mars);
-	//ADD_CEL_BODY(jupiter);
+	ADD_CEL_BODY(mercury);
+	ADD_CEL_BODY(venus);
+	ADD_CEL_BODY(mars);
+	ADD_CEL_BODY(jupiter);
 	ADD_CEL_BODY(saturn);
-	//ADD_CEL_BODY(uranus);
-	//ADD_CEL_BODY(neptune);
+	ADD_CEL_BODY(uranus);
+	ADD_CEL_BODY(neptune);
 
 #undef DECLARE_BODY
 	saturn.set_ring(saturn_ring_shape, &celestial_ring_shader, saturn_ring_texture, saturn_ring_scale);
@@ -289,6 +289,13 @@ int main()
 		};
 
 		create_scene(create_scene, {&sun, glm::mat4(1.0f)});
+
+		// attach camera to saturn 
+		// glm::mat4 extra_translation = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 2.0f));
+		// glm::vec4 saturn_coord_world = extra_translation*saturn._to_child_transform*glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		// camera.mWorld.SetTranslate(glm::vec3(saturn_coord_world));
+		// //camera.mWorld.LookTowards(glm::vec3(0.0)-glm::vec3(earth_coord_world));
+		// camera.mWorld.LookAt(glm::vec3(0.0));
 
 		//
 		// TODO: Replace this explicit rendering of the Earth and Moon

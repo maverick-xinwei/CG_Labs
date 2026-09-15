@@ -81,6 +81,7 @@ public:
 
 	//xinwxu If true, the spin_tilt is done after orbit. 
 	bool adjust_spin_tilt = false;
+	glm::mat4 _to_child_transform;
 
 private:
 	struct {

@@ -47,7 +47,7 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	glm::mat4 world = parent_transform * R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt * R_spin * glm::scale(glm::mat4(1.0f), _body.scale);
 	if (adjust_spin_tilt)
 	{
-		world = parent_transform * R_spin_tilt* R_orbit_tilt*R_orbit* T_orbit* R_spin * glm::scale(glm::mat4(1.0f), _body.scale);
+		world = parent_transform * R_orbit_tilt *R_orbit* T_orbit* R_spin * glm::scale(glm::mat4(1.0f), _body.scale);
 	}
 
 	if (show_basis)
@@ -65,6 +65,11 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 
 	glm::mat4 updated_parent_transform = parent_transform * R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt ; 
 
+	if (adjust_spin_tilt)
+	{
+		updated_parent_transform = parent_transform * R_spin_tilt*R_orbit_tilt * R_orbit*T_orbit ; 
+	}
+
 	if (_ring.is_set)
 	{
 		glm::mat4 ring_world= R_orbit_tilt*R_orbit*T_orbit * R_spin_tilt * R_spin * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0), glm::vec3(_ring.scale, 1.0f));
@@ -72,6 +77,7 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 		_ring.node.render(view_projection, ring_world);
 	}
 
+	_to_child_transform = updated_parent_transform;
 	return updated_parent_transform;
 }
 
