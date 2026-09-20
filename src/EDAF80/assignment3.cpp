@@ -17,6 +17,7 @@
 #include <clocale>
 #include <cstdlib>
 #include <stdexcept>
+#include<core/helpers.hpp>
 
 edaf80::Assignment3::Assignment3(WindowManager& windowManager) :
 	mCamera(0.5f * glm::half_pi<float>(),
@@ -83,6 +84,14 @@ edaf80::Assignment3::run()
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
+	GLuint tex_skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Skybox Tex",
+	                                         { { ShaderType::vertex, "EDAF80/skybox.vert" },
+	                                           { ShaderType::fragment, "EDAF80/skybox.frag" } },
+	                                         tex_skybox_shader);
+	if (tex_skybox_shader == 0u)
+		LogError("Failed to load skybox texture shader");
+
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
@@ -108,7 +117,20 @@ edaf80::Assignment3::run()
 
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
-	skybox.set_program(&fallback_shader, set_uniforms);
+	skybox.set_program(&tex_skybox_shader, set_uniforms);
+	
+	std::map<std::string, std::string> cbmp;
+	cbmp["nx"] = "../../../res/cubemaps/NissiBeach2/negx.jpg";
+	cbmp["ny"] = "../../../res/cubemaps/NissiBeach2/negy.jpg";
+	cbmp["nz"] = "../../../res/cubemaps/NissiBeach2/negz.jpg";
+	cbmp["px"] = "../../../res/cubemaps/NissiBeach2/posx.jpg";
+	cbmp["py"] = "../../../res/cubemaps/NissiBeach2/posy.jpg";
+	cbmp["pz"] = "../../../res/cubemaps/NissiBeach2/posz.jpg";
+	auto skybox_texture = bonobo::loadTextureCubeMap(cbmp["px"], cbmp["nx"],
+													 cbmp["py"], cbmp["ny"],
+													 cbmp["pz"], cbmp["nz"], false);
+	skybox.add_texture("texture_cube", skybox_texture, GL_TEXTURE_CUBE_MAP);
+
 
 	auto demo_shape = parametric_shapes::createSphere(1.5f, 40u, 40u);
 	if (demo_shape.vao == 0u) {
@@ -130,6 +152,7 @@ edaf80::Assignment3::run()
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
 	glEnable(GL_DEPTH_TEST);
 
 
@@ -201,7 +224,6 @@ edaf80::Assignment3::run()
 
 		skybox.render(mCamera.GetWorldToClipMatrix());
 		demo_sphere.render(mCamera.GetWorldToClipMatrix());
-
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

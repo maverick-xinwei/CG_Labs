@@ -136,11 +136,17 @@ parametric_shapes::createSphere(float const radius,
 	std::vector<glm::vec3> tangents;
 	std::vector<glm::vec3> binormals;
 	std::vector<glm::vec3> normals;
+	std::vector<glm::vec3> texture;
 
 	float r = radius;
-	for (float theta=0; theta <= two_pi ; theta+=two_pi/(longitude_split_count-1))
+	uint8_t lo, la; // for creating texture coords
+
+	lo = 0;
+	// actually draw longtitude_split_count + 1 slices because last and first are overlapped for making texture mapping easier
+	for (float _theta=0; _theta < two_pi+two_pi/(longitude_split_count) ; _theta+=two_pi/(longitude_split_count))
 	{
-		for (float phi=0; phi <= pi; phi+=pi/(latitude_split_count-1))
+		la = 0;
+		for (float _phi=0; _phi < pi + pi/(latitude_split_count-1); _phi+=pi/(latitude_split_count-1))
 		{
 			// vertices.emplace_back(glm::vec3(
 			// 	r*glm::sin<float>(theta)*glm::sin<float>(phi),
@@ -148,13 +154,15 @@ parametric_shapes::createSphere(float const radius,
 			// 	r*glm::cos<float>(theta)*glm::sin<float>(phi)
 			// ));
 
+			float phi = (_phi>pi) ? pi : _phi;
+			float theta = (_theta>two_pi) ? two_pi : _theta;
 			auto const v = glm::vec3(
 				r*glm::sin<float>(theta)*glm::sin<float>(phi),
 				-1.0*r*glm::cos<float>(phi),
 				r*glm::cos<float>(theta)*glm::sin<float>(phi)
 			);
-
 			vertices.emplace_back(v);
+
 
 			tangents.emplace_back(glm::vec3(
 				r*glm::cos(theta),//*glm::sin(phi),
@@ -168,10 +176,14 @@ parametric_shapes::createSphere(float const radius,
 				r*glm::cos(theta)*glm::cos(phi)
 			)));
 
-			normals = vertices;
 			//std::cout << v << std::endl;
+			texture.emplace_back(glm::vec3(static_cast<float>(lo)/static_cast<float>(longitude_split_count+1), static_cast<float>(la)/static_cast<float>(latitude_split_count-1), 0));
+			la++;
 		}
+		lo++;
 	}
+
+	normals = vertices;
 
 
 	//creating the indices
@@ -186,8 +198,10 @@ parametric_shapes::createSphere(float const radius,
 			// ---- x(beneath) ----- x(beneath_right) -----
 			unsigned int vert_curr = c*latitude_split_count+l;
 			unsigned int vert_right = c*latitude_split_count + l +1;
-			unsigned int vert_beneath = ((c+1)%longitude_split_count)*latitude_split_count+l;
-			unsigned int vert_beneath_right = ((c+1)%longitude_split_count)*latitude_split_count + l +1;
+
+			//modulo longtitude_split_count +1 because the last vertical slice and the first one are overlapped
+			unsigned int vert_beneath = ((c+1)%(longitude_split_count+1))*latitude_split_count+l;
+			unsigned int vert_beneath_right = ((c+1)%(longitude_split_count+1))*latitude_split_count + l +1;
 
 			// curr -> beneath -> beneath_right
 			auto idx1 = glm::uvec3(vert_curr,  vert_beneath_right, vert_beneath);
@@ -204,6 +218,7 @@ parametric_shapes::createSphere(float const radius,
 	//std::cout << "Vertices count is " << data.vertices_nb << std::endl;
 	//std::cout << "indices count is " << data.indices_nb << std::endl;
 
+
 	glGenVertexArrays(1, &data.vao);
 	glBindVertexArray(data.vao);
 	
@@ -215,7 +230,10 @@ parametric_shapes::createSphere(float const radius,
 	auto const binormals_size = static_cast<GLsizeiptr>(binormals.size() * sizeof(glm::vec3));
 	auto const normals_offset = binormals_offset+binormals_size;
 	auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
-	auto const bo_byte_size = vertices_size+tangents_size+binormals_size+normals_size;
+	auto const texture_offset = normals_offset+normals_size;
+	auto const texture_size = static_cast<GLsizeiptr>(texture.size() * sizeof(glm::vec3));
+	auto const bo_byte_size = vertices_size+tangents_size+binormals_size+normals_size + texture_size;
+
 
 
 	glGenBuffers(1, &data.bo);
@@ -237,6 +255,10 @@ parametric_shapes::createSphere(float const radius,
 	glBufferSubData(GL_ARRAY_BUFFER, normals_offset, normals_size, normals.data());
 	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::normals));
 	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::normals), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(normals_offset));
+
+	glBufferSubData(GL_ARRAY_BUFFER, texture_offset, texture_size, texture.data());
+	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::texcoords));
+	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::texcoords), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(texture_offset));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
