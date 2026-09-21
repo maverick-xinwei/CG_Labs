@@ -85,11 +85,19 @@ edaf80::Assignment3::run()
 		LogError("Failed to load texcoord shader");
 
 	GLuint tex_skybox_shader = 0u;
-	program_manager.CreateAndRegisterProgram("Skybox Tex",
+	program_manager.CreateAndRegisterProgram("skybox Tex",
 	                                         { { ShaderType::vertex, "EDAF80/skybox.vert" },
 	                                           { ShaderType::fragment, "EDAF80/skybox.frag" } },
 	                                         tex_skybox_shader);
 	if (tex_skybox_shader == 0u)
+		LogError("Failed to load skybox texture shader");
+
+	GLuint phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Phong Tex",
+	                                         { { ShaderType::vertex, "EDAF80/phong.vert" },
+	                                           { ShaderType::fragment, "EDAF80/phong.frag" } },
+	                                         phong_shader);
+	if (phong_shader == 0u)
 		LogError("Failed to load skybox texture shader");
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
@@ -148,6 +156,15 @@ edaf80::Assignment3::run()
 	demo_sphere.set_geometry(demo_shape);
 	demo_sphere.set_material_constants(demo_material);
 	demo_sphere.set_program(&fallback_shader, phong_set_uniforms);
+
+	auto diffuse_texture = bonobo::loadTexture2D("../../../res/textures/leather_red_02_coll1_2k.jpg", false);
+	demo_sphere.add_texture("diffuse_texture", diffuse_texture, GL_TEXTURE_2D);
+
+	auto specular_texture = bonobo::loadTexture2D("../../../res/textures/leather_red_02_rough_2k.jpg", false);
+	demo_sphere.add_texture("specular_texture", specular_texture, GL_TEXTURE_2D);
+
+	auto normal_map_texture = bonobo::loadTexture2D("../../../res/textures/leather_red_02_nor_2k.jpg", false);
+	demo_sphere.add_texture("normal_map_texture", normal_map_texture, GL_TEXTURE_2D);
 
 
 	glClearDepthf(1.0f);
