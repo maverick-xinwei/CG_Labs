@@ -45,7 +45,7 @@ void main()
 
     // specular
     float specular_l;
-    specular_l = 1 >0.0 ? pow(max(dot(normalized_view_dir, rflct_light), 0), shininess_value): 0.0;
+    specular_l = diffuse_l >0.0 ? pow(max(dot(normalized_view_dir, rflct_light), 0), shininess_value): 0.0;
     vec3 specular_light = specular_colour* specular_l*vec3(texture(specular_texture, vs_in.texcoord.xy));
 
     // normal map
